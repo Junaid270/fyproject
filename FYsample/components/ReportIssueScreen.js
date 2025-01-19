@@ -199,6 +199,7 @@ const styles = StyleSheet.create({
     width: 50, // Adjust image size
     height: 50, // Adjust image size
     borderRadius: 25,
+    resizeMode: 'contain',
   },
 });
 
