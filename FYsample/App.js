@@ -2,14 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import * as Font from 'expo-font';
-import {  Text } from 'react-native';
+import { Text } from 'react-native';
 import OnboardingScreen from './components/OnboardingScreen';
-import HomeScreen from './components/HomeScreen';
 import SignInScreen from './components/SignInScreen';
 import SignUpScreen from './components/SignUpScreen';
+import HomeScreen from './components/HomeScreen';
+import ProfileScreen from './components/ProfileScreen'; // Example Profile Screen
+import ReportIssueScreen from './components/ReportIssueScreen'; // Example Report Issue Screen
+import SettingsScreen from './components/SettingsScreen'; // Example Settings Screen
 import 'react-native-gesture-handler';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-
 
 const Stack = createStackNavigator();
 
@@ -36,6 +38,7 @@ const slides = [
 
 export default function App() {
   const [fontsLoaded, setFontsLoaded] = useState(false);
+
   useEffect(() => {
     const loadFonts = async () => {
       await Font.loadAsync({
@@ -54,23 +57,26 @@ export default function App() {
   }
 
   return (
-     <GestureHandlerRootView style={{ flex: 1 }}>
-    <NavigationContainer>
-      <Stack.Navigator
-      initialRouteName='Onboarding'
-        screenOptions={{
-          headerShown: false,
-          cardStyle: { backgroundColor: '#d7d7d7' }
-        }}
-      >
-        <Stack.Screen name="Onboarding">
-          {props => <OnboardingScreen {...props} slides={slides} />}
-        </Stack.Screen>
-        <Stack.Screen name="SignIn" component={SignInScreen} />
-        <Stack.Screen name="SignUp" component={SignUpScreen} />
-        <Stack.Screen name="Home" component={HomeScreen} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <NavigationContainer>
+        <Stack.Navigator
+          initialRouteName="Onboarding"
+          screenOptions={{
+            headerShown: false,
+            cardStyle: { backgroundColor: '#d7d7d7' }
+          }}
+        >
+          <Stack.Screen name="Onboarding">
+            {props => <OnboardingScreen {...props} slides={slides} />}
+          </Stack.Screen>
+          <Stack.Screen name="SignIn" component={SignInScreen} />
+          <Stack.Screen name="SignUp" component={SignUpScreen} />
+          <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="Profile" component={ProfileScreen} />
+          <Stack.Screen name="ReportIssue" component={ReportIssueScreen} />
+          <Stack.Screen name="Settings" component={SettingsScreen} />
+        </Stack.Navigator>
+      </NavigationContainer>
     </GestureHandlerRootView>
   );
 }
