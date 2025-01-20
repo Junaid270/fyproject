@@ -4,12 +4,6 @@ import {
   Text,
   TextInput,
   Pressable,
-  setUsername,
-  username,
-  email,
-  setEmail,
-  password,
-  setPassword,
   TouchableOpacity,
   Image,
   StyleSheet,
@@ -88,7 +82,7 @@ const SignUpScreen = ({ navigation }) => {
               <Text style={styles.regiText}>Sign In</Text>
             </Pressable>
           </View>
-          <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Home')}>
+          <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('BottomTabs')}>
             <Text style={styles.buttonText}>Sign Up</Text>
           </TouchableOpacity>
         </View>

@@ -8,6 +8,7 @@ import HomeScreen from './components/HomeScreen';
 import SignInScreen from './components/SignInScreen';
 import SignUpScreen from './components/SignUpScreen';
 import BottomTabs from "./components/BottomTabs";
+import ReportPage from './components/ReportPage';
 import 'react-native-gesture-handler';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
@@ -71,6 +72,7 @@ export default function App() {
         <Stack.Screen name="SignUp" component={SignUpScreen} />
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="BottomTabs" component={BottomTabs} />
+        <Stack.Screen name="ReportPage" component={ReportPage} />
       </Stack.Navigator>
     </NavigationContainer>
     </GestureHandlerRootView>
