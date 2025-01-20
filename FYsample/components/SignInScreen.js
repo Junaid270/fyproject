@@ -1,20 +1,48 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  TouchableOpacity,
+  Image,
+  StyleSheet,
+} from "react-native";
+import { useAuth } from "../context/AuthContext";
 
 const SignInScreen = ({ navigation }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const { login } = useAuth();
+
+  const handleSignIn = async () => {
+    if (!email || !password) {
+      alert("Please fill in all fields");
+      return;
+    }
+
+    const result = await login({
+      email,
+      password,
+    });
+
+    if (result.success) {
+      navigation.navigate("BottomTabs");
+    } else {
+      alert(result.message || "Login failed");
+    }
+  };
 
   return (
     <View style={styles.container}>
       <View style={styles.SignInScreen}>
         <Image
-          source={require('../assets/sign.png')}
-          style={{ width: '100%', height: '100%' }}
+          source={require("../assets/sign.png")}
+          style={{ width: "100%", height: "100%" }}
         />
       </View>
       <Text style={styles.title}>Welcome 👋 </Text>
-      <Text style={styles.text}>Let’s Get You Started With Nagrik Seva!</Text>
+      <Text style={styles.text}>Let's Get You Started With Nagrik Seva!</Text>
       <Text style={styles.emailHeader}>Email</Text>
       <TextInput
         style={styles.input}
@@ -31,14 +59,22 @@ const SignInScreen = ({ navigation }) => {
         value={password}
         onChangeText={setPassword}
       />
-      <View style={{ height: 2, width: '100%', position: 'absolute', backgroundColor: '#EEEEEE', top: 530 }}></View>
+      <View
+        style={{
+          height: 2,
+          width: "100%",
+          position: "absolute",
+          backgroundColor: "#EEEEEE",
+          top: 530,
+        }}
+      ></View>
       <View style={styles.noAccount}>
         <Text>Don't have an account? </Text>
-        <Pressable onPress={() => navigation.navigate('SignUp')}>
+        <Pressable onPress={() => navigation.navigate("SignUp")}>
           <Text style={styles.regiText}>Register Now</Text>
         </Pressable>
       </View>
-      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('BottomTabs')}>  
+      <TouchableOpacity style={styles.button} onPress={handleSignIn}>
         <Text style={styles.buttonText}>Sign In</Text>
       </TouchableOpacity>
     </View>
@@ -48,34 +84,33 @@ const SignInScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'white',
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "white",
   },
   title: {
     fontSize: 30,
-    fontWeight: 'bold',
-    color: '#FFFF',
-    position: 'absolute',
+    fontWeight: "bold",
+    color: "#FFFF",
+    position: "absolute",
     top: 180,
     paddingRight: 180,
   },
 
   text: {
     fontSize: 16,
-    color: '#FFFF',
-    position: 'absolute',
+    color: "#FFFF",
+    position: "absolute",
     top: 230,
     paddingRight: 80,
     paddingLeft: 10,
   },
-  
+
   SignInScreen: {
-    width: '100%',
+    width: "100%",
     height: 260,
     top: 0,
-    position: 'absolute',
-    
+    position: "absolute",
   },
 
   input: {
@@ -85,66 +120,63 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 20,
     borderRadius: 18,
-    position: 'absolute',
+    position: "absolute",
     top: 310,
   },
 
   emailHeader: {
     fontSize: 24,
-    fontWeight: 'bold',
-    position: 'absolute',
+    fontWeight: "bold",
+    position: "absolute",
     top: 280,
     paddingRight: 270,
-
   },
 
-  passHeader: {   
+  passHeader: {
     fontSize: 24,
-    fontWeight: 'bold',
-    position: 'absolute',
+    fontWeight: "bold",
+    position: "absolute",
     top: 400,
     paddingRight: 230,
   },
 
-    passInput: {
+  passInput: {
     width: 340,
     height: 70,
     margin: 12,
     borderWidth: 1,
     padding: 20,
     borderRadius: 18,
-    position: 'absolute',
+    position: "absolute",
     top: 430,
   },
 
-  regiText: { 
-    color: '#235DFF',
-    textDecorationLine: 'underline',
+  regiText: {
+    color: "#235DFF",
+    textDecorationLine: "underline",
     top: -20,
     paddingLeft: 150,
   },
 
   noAccount: {
-    position: 'absolute',
+    position: "absolute",
     top: 550,
   },
 
   button: {
-    backgroundColor: '#235DFF',
+    backgroundColor: "#235DFF",
     padding: 20,
     borderRadius: 18,
-    position: 'absolute',
+    position: "absolute",
     top: 600,
     width: 200,
   },
 
   buttonText: {
-    color: 'white',
+    color: "white",
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
   },
-
-  
 });
 
 export default SignInScreen;
