@@ -6,6 +6,8 @@ const passport = require("passport");
 const mongoose = require("mongoose"); // Import mongoose
 const path = require("path");
 const cors = require("cors");
+const Admin = require("./models/Admin");
+const User = require("./models/User"); // Add this import
 
 const port = 3000;
 
@@ -42,8 +44,15 @@ app.set("views", path.join(__dirname, "/views"));
 // CORS configuration
 app.use(
   cors({
-    origin: "http://192.168.0.202:8081", // your frontend's URL
-    credentials: true, // Allows cookies to be sent
+    origin: [
+      
+      "http://localhost:3001",
+      "http://192.168.0.202:8081",
+      "exp://192.168.0.202:8081",
+    ],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Accept"],
   })
 );
 
@@ -69,9 +78,33 @@ app.use(sessionMiddleware);
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Routes - Correct the path here
-app.use("/auth", require("./routes/userRoutes")); // Fix the path to 'require' correctly
-app.use("/auth/posts", require("./routes/postRoutes")); // Add this line
+// Update passport configuration
+passport.serializeUser((user, done) => {
+  done(null, {
+    id: user._id,
+    role: user.role,
+    model: user.constructor.modelName, // Add model name to identify User vs Admin
+  });
+});
+
+passport.deserializeUser(async (data, done) => {
+  try {
+    let user;
+    if (data.model === "Admin") {
+      user = await Admin.findById(data.id);
+    } else {
+      user = await User.findById(data.id);
+    }
+    done(null, user);
+  } catch (error) {
+    done(error);
+  }
+});
+
+// Routes
+app.use("/auth", require("./routes/userRoutes"));
+app.use("/auth/posts", require("./routes/postRoutes"));
+app.use("/auth/admin", require("./routes/adminRoutes")); // Changed from /admin to /auth/admin
 
 // Add this after your routes
 app.use((err, req, res, next) => {
@@ -82,9 +115,14 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Handle 404
+// Handle 404 - Add more detailed error message
 app.use((req, res) => {
-  res.status(404).json({ message: "Route not found" });
+  console.log("404 Not Found:", req.method, req.url); // Add logging
+  res.status(404).json({
+    message: "Route not found",
+    path: req.url,
+    method: req.method,
+  });
 });
 
 // Start server

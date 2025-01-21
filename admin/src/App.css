@@ -36,3 +36,13 @@
     transform: rotate(360deg);
   }
 }
+
+.admin-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex: 1;
+  background-color: #f5f6fa;
+}

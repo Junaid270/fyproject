@@ -10,11 +10,22 @@ import {
   Platform,
   Dimensions,
 } from "react-native";
+import { Picker } from "@react-native-picker/picker";
 import MapView, { Marker } from "react-native-maps";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 import * as FileSystem from "expo-file-system";
 import { usePost } from "../context/PostContext";
+
+// Predefined categories
+const CATEGORIES = [
+  "Water",
+  "Roads",
+  "Landslides",
+  "Electricity",
+  "Sanitation",
+  "Others",
+];
 
 const CreatePostScreen = ({ navigation }) => {
   const [title, setTitle] = useState("");
@@ -22,6 +33,7 @@ const CreatePostScreen = ({ navigation }) => {
   const [image, setImage] = useState(null);
   const [tags, setTags] = useState("");
   const [location, setLocation] = useState(null);
+  const [category, setCategory] = useState(CATEGORIES[0]); // Default to first category
   const { createPost } = usePost();
 
   const [mapRegion, setMapRegion] = useState({
@@ -111,7 +123,7 @@ const CreatePostScreen = ({ navigation }) => {
   };
 
   const handleSubmit = async () => {
-    if (!title || !description || !image || !location) {
+    if (!title || !description || !image || !location || !category) {
       alert("Please fill all required fields");
       return;
     }
@@ -121,12 +133,17 @@ const CreatePostScreen = ({ navigation }) => {
       description,
       image,
       location,
+      category,
       tags: tags.split(",").map((tag) => tag.trim()),
     };
 
     try {
+      console.log("Submitting post with data:", postData);
       const result = await createPost(postData);
+      console.log("Create post result:", result);
+
       if (result.success) {
+        alert("Post created successfully!");
         navigation.navigate("Profile");
       } else {
         alert(result.message || "Failed to create post");
@@ -156,6 +173,28 @@ const CreatePostScreen = ({ navigation }) => {
         multiline
         numberOfLines={4}
       />
+
+      {/* Category Picker */}
+      <View style={styles.pickerContainer}>
+        <Text style={styles.label}>Category:</Text>
+        <View style={styles.pickerWrapper}>
+          <Picker
+            selectedValue={category}
+            onValueChange={(itemValue) => setCategory(itemValue)}
+            style={styles.picker}
+            dropdownIconColor="#333"
+          >
+            {CATEGORIES.map((cat) => (
+              <Picker.Item
+                key={cat}
+                label={cat}
+                value={cat}
+                style={styles.pickerItem}
+              />
+            ))}
+          </Picker>
+        </View>
+      </View>
 
       <TouchableOpacity style={styles.imageButton} onPress={pickImage}>
         <Text style={styles.buttonText}>Pick an image</Text>
@@ -221,6 +260,43 @@ const styles = StyleSheet.create({
   textArea: {
     height: 100,
     textAlignVertical: "top",
+  },
+  pickerContainer: {
+    marginBottom: 15,
+  },
+  label: {
+    fontSize: 16,
+    marginBottom: 8,
+    color: "#333",
+    fontWeight: "500",
+  },
+  pickerWrapper: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    backgroundColor: "#fff",
+    ...Platform.select({
+      ios: {
+        paddingHorizontal: 12,
+      },
+      android: {
+        paddingHorizontal: 0,
+      },
+    }),
+  },
+  picker: {
+    ...Platform.select({
+      ios: {
+        height: 150,
+      },
+      android: {
+        height: 50,
+      },
+    }),
+  },
+  pickerItem: {
+    fontSize: 16,
+    color: "#333",
   },
   imageButton: {
     backgroundColor: "#235DFF",

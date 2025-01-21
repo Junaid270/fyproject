@@ -10,9 +10,12 @@ import {
   Modal,
   TextInput,
   Alert,
+  ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { useAuth } from "../context/AuthContext";
 import { usePost } from "../context/PostContext";
+import config from "../config";
 
 const ProfileScreen = ({ navigation }) => {
   const { user, logout } = useAuth();
@@ -21,10 +24,38 @@ const ProfileScreen = ({ navigation }) => {
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editTags, setEditTags] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchUserPosts();
+    loadPosts();
   }, []);
+
+  const loadPosts = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      await fetchUserPosts();
+    } catch (err) {
+      console.error("Error loading posts:", err);
+      setError("Failed to load posts");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await fetchUserPosts();
+    } catch (err) {
+      console.error("Error refreshing posts:", err);
+      setError("Failed to refresh posts");
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const handleLogout = async () => {
     const result = await logout();
@@ -48,7 +79,7 @@ const ProfileScreen = ({ navigation }) => {
         onPress: async () => {
           const result = await deletePost(postId);
           if (result.success) {
-            fetchUserPosts();
+            loadPosts();
           } else {
             Alert.alert("Error", result.message || "Failed to delete post");
           }
@@ -73,11 +104,30 @@ const ProfileScreen = ({ navigation }) => {
 
     if (result.success) {
       setEditingPost(null);
-      fetchUserPosts();
+      loadPosts();
     } else {
       Alert.alert("Error", result.message || "Failed to update post");
     }
   };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={loadPosts}>
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   if (!user) {
     return (
@@ -88,7 +138,12 @@ const ProfileScreen = ({ navigation }) => {
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
       <View style={styles.profileInfo}>
         <Text style={styles.profileText}>Username: {user.username}</Text>
         <Text style={styles.profileText}>Phone Number: {user.phoneNumber}</Text>
@@ -104,57 +159,61 @@ const ProfileScreen = ({ navigation }) => {
 
       <View style={styles.userPosts}>
         <Text style={styles.postsHeader}>Your Reports</Text>
-        {userPosts.map((post) => (
-          <TouchableOpacity
-            key={post._id}
-            onPress={() => navigation.navigate("PostDetails", { post })}
-            style={styles.postItem}
-          >
-            <Image
-              source={{ uri: post.image }}
-              style={styles.postImage}
-              resizeMode="cover"
-            />
-            <View style={styles.postContent}>
-              <Text style={styles.postTitle}>{post.title}</Text>
-              <Text style={styles.postDescription} numberOfLines={2}>
-                {post.description}
-              </Text>
-              <Text style={styles.postLocation}>
-                📍 {post.location.address}
-              </Text>
-              <Text
-                style={[
-                  styles.postStatus,
-                  {
-                    color:
-                      post.status === "pending"
-                        ? "#FFA500"
-                        : post.status === "in-progress"
-                        ? "#007AFF"
-                        : "#28a745",
-                  },
-                ]}
-              >
-                Status: {post.status}
-              </Text>
-            </View>
-            <View style={styles.postActions}>
-              <TouchableOpacity
-                style={[styles.actionButton, styles.editButton]}
-                onPress={() => handleEditPost(post)}
-              >
-                <Text style={styles.actionButtonText}>Edit</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.actionButton, styles.deleteButton]}
-                onPress={() => handleDeletePost(post._id)}
-              >
-                <Text style={styles.actionButtonText}>Delete</Text>
-              </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
-        ))}
+        {userPosts.length === 0 ? (
+          <Text style={styles.noPosts}>No reports yet</Text>
+        ) : (
+          userPosts.map((post) => (
+            <TouchableOpacity
+              key={post._id}
+              onPress={() => navigation.navigate("PostDetails", { post })}
+              style={styles.postItem}
+            >
+              <Image
+                source={{ uri: post.image }}
+                style={styles.postImage}
+                resizeMode="cover"
+              />
+              <View style={styles.postContent}>
+                <Text style={styles.postTitle}>{post.title}</Text>
+                <Text style={styles.postDescription} numberOfLines={2}>
+                  {post.description}
+                </Text>
+                <Text style={styles.postLocation}>
+                  📍 {post.location.address}
+                </Text>
+                <Text
+                  style={[
+                    styles.postStatus,
+                    {
+                      color:
+                        post.status === "pending"
+                          ? "#FFA500"
+                          : post.status === "in-progress"
+                          ? "#007AFF"
+                          : "#28a745",
+                    },
+                  ]}
+                >
+                  Status: {post.status}
+                </Text>
+              </View>
+              <View style={styles.postActions}>
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.editButton]}
+                  onPress={() => handleEditPost(post)}
+                >
+                  <Text style={styles.actionButtonText}>Edit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.deleteButton]}
+                  onPress={() => handleDeletePost(post._id)}
+                >
+                  <Text style={styles.actionButtonText}>Delete</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          ))
+        )}
       </View>
 
       <Modal
@@ -350,6 +409,34 @@ const styles = StyleSheet.create({
   modalButtonText: {
     color: "white",
     fontWeight: "bold",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  errorText: {
+    color: "red",
+    marginBottom: 10,
+  },
+  retryButton: {
+    padding: 10,
+    backgroundColor: "#007AFF",
+    borderRadius: 5,
+  },
+  retryButtonText: {
+    color: "white",
+  },
+  noPosts: {
+    textAlign: "center",
+    color: "#666",
+    marginTop: 20,
   },
 });
 

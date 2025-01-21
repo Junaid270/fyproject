@@ -35,7 +35,7 @@ const SignUpScreen = ({ navigation }) => {
     });
 
     if (result.success) {
-      navigation.navigate("BottomTabs");
+      navigation.navigate("SignIn");
     } else {
       alert(result.message);
     }

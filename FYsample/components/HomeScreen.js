@@ -9,18 +9,34 @@ import {
   TextInput,
   Pressable,
   Modal,
+  ActivityIndicator,
+  Alert,
+  Share,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { usePost } from "../context/PostContext";
+import { useAuth } from "../context/AuthContext";
+import { useNavigation } from "@react-navigation/native";
 
 const exampleImage = require("../assets/simple-issue.png"); // Replace with your image URL
 
-const HomeScreen = ({ navigation }) => {
+const HomeScreen = () => {
+  const { user, isAuthenticated, loading } = useAuth();
+  const navigation = useNavigation();
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [expandedCategory, setExpandedCategory] = useState(null);
-  const { posts, fetchPosts } = usePost();
+  const { posts, fetchPosts, upvotePost, downvotePost, reportPost } = usePost();
+
+  useEffect(() => {
+    console.log("HomeScreen mounted, auth state:", { user, isAuthenticated });
+
+    if (!loading && !isAuthenticated) {
+      console.log("User not authenticated, redirecting to login");
+      navigation.replace("Login");
+    }
+  }, [isAuthenticated, loading, navigation]);
 
   useEffect(() => {
     fetchPosts();
@@ -51,7 +67,7 @@ const HomeScreen = ({ navigation }) => {
       post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       post.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory =
-      selectedFilter === "All" || post.tags.includes(selectedFilter);
+      selectedFilter === "All" || post.tags?.includes(selectedFilter) || false;
     return matchesSearch && matchesCategory;
   });
 
@@ -67,6 +83,57 @@ const HomeScreen = ({ navigation }) => {
     );
   };
 
+  const handleUpvote = async (postId) => {
+    const result = await upvotePost(postId);
+    if (!result.success) {
+      Alert.alert("Error", result.message || "Failed to upvote");
+    }
+  };
+
+  const handleDownvote = async (postId) => {
+    const result = await downvotePost(postId);
+    if (!result.success) {
+      Alert.alert("Error", result.message || "Failed to downvote");
+    }
+  };
+
+  const handleShare = async (post) => {
+    try {
+      await Share.share({
+        message: `Check out this issue: ${post.title}\n${post.description}\nLocation: ${post.location.address}`,
+        title: post.title,
+      });
+    } catch (error) {
+      Alert.alert("Error", "Failed to share post");
+    }
+  };
+
+  const handleReport = (post) => {
+    Alert.prompt(
+      "Report Post",
+      "Please provide a reason for reporting this post:",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Submit",
+          onPress: async (reason) => {
+            if (reason) {
+              const result = await reportPost(post._id, reason);
+              if (result.success) {
+                Alert.alert("Success", "Post reported successfully");
+              } else {
+                Alert.alert("Error", result.message || "Failed to report post");
+              }
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const renderPost = (post) => (
     <TouchableOpacity
       key={`post-${post._id}`}
@@ -78,18 +145,70 @@ const HomeScreen = ({ navigation }) => {
         style={styles.image}
         resizeMode="cover"
       />
+      <View style={styles.categoryTag}>
+        <Text style={styles.categoryText}>
+          {post.category || "Uncategorized"}
+        </Text>
+      </View>
       <Text style={styles.title}>{post.title}</Text>
       <Text style={styles.description}>{post.description}</Text>
-      <Text style={styles.location}>📍 {post.location.address}</Text>
-      <Text style={styles.tags}>
-        {post.tags.map((tag) => `#${tag}`).join(" ")}
+      <Text style={styles.location}>
+        📍 {post.location.address || "No address provided"}
       </Text>
-      <View style={styles.postFooter}>
-        <Text style={styles.author}>Posted by: {post.author.username}</Text>
-        <Text style={styles.status}>Status: {post.status}</Text>
+      <View style={styles.interactionBar}>
+        <View style={styles.voteContainer}>
+          <TouchableOpacity
+            onPress={() => handleUpvote(post._id)}
+            style={styles.voteButton}
+          >
+            <MaterialIcons
+              name="thumb-up"
+              size={24}
+              color={post.upvotes?.includes(user?._id) ? "#007AFF" : "#666"}
+            />
+            <Text style={styles.voteCount}>{post.upvotes?.length || 0}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => handleDownvote(post._id)}
+            style={styles.voteButton}
+          >
+            <MaterialIcons
+              name="thumb-down"
+              size={24}
+              color={post.downvotes?.includes(user?._id) ? "#FF3B30" : "#666"}
+            />
+            <Text style={styles.voteCount}>{post.downvotes?.length || 0}</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.actionButtons}>
+          <TouchableOpacity
+            onPress={() => handleShare(post)}
+            style={styles.actionButton}
+          >
+            <MaterialIcons name="share" size={24} color="#666" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => handleReport(post)}
+            style={styles.actionButton}
+          >
+            <MaterialIcons name="flag" size={24} color="#666" />
+          </TouchableOpacity>
+        </View>
       </View>
     </TouchableOpacity>
   );
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <View style={styles.container}>
@@ -245,6 +364,7 @@ const styles = StyleSheet.create({
   author: {
     fontSize: 12,
     color: "#666",
+    flex: 1,
   },
   status: {
     fontSize: 12,
@@ -288,6 +408,54 @@ const styles = StyleSheet.create({
   subcategoryText: {
     fontSize: 14,
     color: "#666",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  interactionBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#eee",
+  },
+  voteContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  voteButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 15,
+  },
+  voteCount: {
+    marginLeft: 5,
+    color: "#666",
+  },
+  actionButtons: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  actionButton: {
+    marginLeft: 15,
+  },
+  categoryTag: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 15,
+  },
+  categoryText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "bold",
   },
 });
 

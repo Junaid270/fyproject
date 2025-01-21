@@ -1,25 +1,31 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect } from "react";
+import { View, ActivityIndicator } from "react-native";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const apiUrl = process.env.REACT_APP_API_URL || 'http://192.168.0.202:3000';
+  const apiUrl = "http://192.168.0.202:3000";
 
   const fetchApi = async (endpoint, options = {}) => {
-    const response = await fetch(`${apiUrl}${endpoint}`, {
-      headers: { 'Content-Type': 'application/json', ...options.headers },
-      credentials: 'include',
-      ...options,
-    });
-    return response;
+    try {
+      const response = await fetch(`${apiUrl}${endpoint}`, {
+        headers: { "Content-Type": "application/json", ...options.headers },
+        credentials: "include",
+        ...options,
+      });
+      return response;
+    } catch (error) {
+      console.error("API call error:", error);
+      throw error;
+    }
   };
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await fetchApi('/auth/profile', { method: 'GET' });
+        const response = await fetchApi("/auth/profile", { method: "GET" });
         if (response.ok) {
           const data = await response.json();
           setUser(data.user);
@@ -27,7 +33,7 @@ export const AuthProvider = ({ children }) => {
           setUser(null);
         }
       } catch (err) {
-        console.error('Error fetching user:', err);
+        console.error("Error fetching user:", err);
         setUser(null);
       } finally {
         setLoading(false);
@@ -38,50 +44,62 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (credentials) => {
     try {
-      const response = await fetchApi('/auth/login', {
-        method: 'POST',
+      const response = await fetch(`${apiUrl}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
         body: JSON.stringify(credentials),
       });
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data.user);
-        return { success: true };
+
+      if (!response.ok) {
+        throw new Error("Login failed");
       }
-      const error = await response.json();
-      return { success: false, message: error.message || 'Login failed.' };
-    } catch (err) {
-      console.error('Login error:', err);
-      return { success: false, message: 'Login failed.' };
+
+      const data = await response.json();
+      setUser(data.user);
+      return { success: true };
+    } catch (error) {
+      console.error("Login error:", error);
+      return { success: false, message: error.message };
     }
   };
 
   const register = async (credentials) => {
     try {
-      const response = await fetchApi('/auth/register', {
-        method: 'POST',
+      const response = await fetchApi("/auth/register", {
+        method: "POST",
         body: JSON.stringify(credentials),
       });
+
+      const data = await response.json();
+
       if (response.ok) {
-        const data = await response.json();
         setUser(data.user);
         return { success: true };
       }
-      const error = await response.json();
-      return { success: false, message: error.message || 'Registration failed.' };
+      return {
+        success: false,
+        message: data.message || "Registration failed.",
+      };
     } catch (err) {
-      console.error('Registration error:', err);
-      return { success: false, message: 'Registration failed.' };
+      console.error("Registration error:", err);
+      return { success: false, message: "Network error occurred." };
     }
   };
 
   const logout = async () => {
     try {
-      const response = await fetchApi('/auth/logout', { method: 'POST' });
+      const response = await fetchApi("/auth/logout", { method: "POST" });
       if (response.ok) {
         setUser(null);
+        return true;
       }
+      return false;
     } catch (err) {
-      console.error('Error logging out:', err);
+      console.error("Error logging out:", err);
+      return false;
     }
   };
 
@@ -94,10 +112,23 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated: !!user,
   };
 
-  return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = () => React.useContext(AuthContext);
+export const useAuth = () => {
+  const context = React.useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+};
 
 export default AuthContext;
- 
