@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   Modal,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import { usePost } from "../context/PostContext";
 
 const exampleImage = require("../assets/simple-issue.png"); // Replace with your image URL
 
@@ -18,7 +19,12 @@ const HomeScreen = ({ navigation }) => {
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [dropdownVisible, setDropdownVisible] = useState(false);
-  const [expandedCategory, setExpandedCategory] = useState(null); // Track expanded main category
+  const [expandedCategory, setExpandedCategory] = useState(null);
+  const { posts, fetchPosts } = usePost();
+
+  useEffect(() => {
+    fetchPosts();
+  }, []);
 
   const categories = [
     {
@@ -39,46 +45,20 @@ const HomeScreen = ({ navigation }) => {
     },
   ];
 
-  // Sample data for posts
-  const posts = [
-    {
-      id: 1,
-      category: "Subcategory1.1",
-      description: "Post in Subcategory 1.1",
-      hashtags: "#example #subcategory1.1",
-    },
-    {
-      id: 2,
-      category: "Subcategory2.1",
-      description: "Post in Subcategory 2.1",
-      hashtags: "#example #subcategory2.1",
-    },
-    {
-      id: 3,
-      category: "Subcategory3.1",
-      description: "Post in Subcategory 3.1",
-      hashtags: "#example #subcategory3.1",
-    },
-    {
-      id: 4,
-      category: "Subcategory1.2",
-      description: "Another post in Subcategory 1.2",
-      hashtags: "#example #subcategory1.2",
-    },
-  ];
-
-  // Filter posts based on the selected category and search query
-  const filteredPosts = posts.filter(
-    (post) =>
-      (selectedFilter === "All" || post.category === selectedFilter) &&
-      post.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter posts based on search and category
+  const filteredPosts = posts.filter((post) => {
+    const matchesSearch =
+      post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      post.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory =
+      selectedFilter === "All" || post.tags.includes(selectedFilter);
+    return matchesSearch && matchesCategory;
+  });
 
   const handleCategorySelect = (category) => {
     setSelectedFilter(category);
     setDropdownVisible(false);
-    setExpandedCategory(null); // Collapse categories
-    console.log(`Selected filter: ${category}`);
+    setExpandedCategory(null);
   };
 
   const toggleExpandedCategory = (mainCategory) => {
@@ -87,31 +67,56 @@ const HomeScreen = ({ navigation }) => {
     );
   };
 
+  const renderPost = (post) => (
+    <TouchableOpacity
+      key={`post-${post._id}`}
+      onPress={() => navigation.navigate("PostDetails", { post })}
+      style={styles.post}
+    >
+      <Image
+        source={{ uri: post.image }}
+        style={styles.image}
+        resizeMode="cover"
+      />
+      <Text style={styles.title}>{post.title}</Text>
+      <Text style={styles.description}>{post.description}</Text>
+      <Text style={styles.location}>📍 {post.location.address}</Text>
+      <Text style={styles.tags}>
+        {post.tags.map((tag) => `#${tag}`).join(" ")}
+      </Text>
+      <View style={styles.postFooter}>
+        <Text style={styles.author}>Posted by: {post.author.username}</Text>
+        <Text style={styles.status}>Status: {post.status}</Text>
+      </View>
+    </TouchableOpacity>
+  );
+
   return (
     <View style={styles.container}>
-      {/* Header with filter button and search bar */}
-      <View style={styles.headerContainer}>
-        <TouchableOpacity
+      <View style={styles.header}>
+        <TextInput
+          style={styles.searchBar}
+          placeholder="Search reports..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+        <Pressable
           style={styles.filterButton}
           onPress={() => setDropdownVisible(true)}
         >
-          <MaterialIcons name="filter-list" size={24} color="#FFFFFF" />
-          <Text style={styles.filterText}>{selectedFilter}</Text>
-        </TouchableOpacity>
-        <TextInput
-          style={styles.searchBar}
-          placeholder="Search posts..."
-          placeholderTextColor="#999"
-          value={searchQuery}
-          onChangeText={(text) => setSearchQuery(text)}
-        />
+          <Text style={styles.filterButtonText}>
+            {selectedFilter} <MaterialIcons name="arrow-drop-down" size={24} />
+          </Text>
+        </Pressable>
       </View>
 
-      {/* Dropdown menu */}
+      <ScrollView style={styles.scrollView}>
+        {filteredPosts.map(renderPost)}
+      </ScrollView>
+
       <Modal
-        transparent={true}
         visible={dropdownVisible}
-        animationType="fade"
+        transparent={true}
         onRequestClose={() => setDropdownVisible(false)}
       >
         <TouchableOpacity
@@ -120,7 +125,7 @@ const HomeScreen = ({ navigation }) => {
         >
           <View style={styles.dropdownMenu}>
             {categories.map((category) => (
-              <View key={category.name}>
+              <View key={`category-${category.name}`}>
                 <TouchableOpacity
                   style={styles.dropdownItem}
                   onPress={() =>
@@ -131,11 +136,10 @@ const HomeScreen = ({ navigation }) => {
                 >
                   <Text style={styles.dropdownText}>{category.name}</Text>
                 </TouchableOpacity>
-                {/* Display subcategories if expanded */}
                 {expandedCategory === category.name &&
                   category.subcategories.map((subcategory) => (
                     <TouchableOpacity
-                      key={subcategory}
+                      key={`subcategory-${category.name}-${subcategory}`}
                       style={styles.subcategoryItem}
                       onPress={() => handleCategorySelect(subcategory)}
                     >
@@ -147,42 +151,6 @@ const HomeScreen = ({ navigation }) => {
           </View>
         </TouchableOpacity>
       </Modal>
-
-      {/* Post list */}
-      <ScrollView style={styles.scrollView}>
-        {filteredPosts.map((post) => (
-          <Pressable
-            key={post.id}
-            onPress={() => navigation.navigate("ReportPage")}
-          >
-            <View style={styles.post}>
-              <Image source={exampleImage} style={styles.image} />
-              <Text style={styles.description}>{post.description}</Text>
-              <Text style={styles.hashtags}>{post.hashtags}</Text>
-              <View style={styles.buttons}>
-                <TouchableOpacity
-                  style={styles.button}
-                  onPress={() => console.log("Upvote clicked")}
-                >
-                  <Text style={styles.buttonText}>Upvote</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.button}
-                  onPress={() => console.log("Downvote clicked")}
-                >
-                  <Text style={styles.buttonText}>Downvote</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.button}
-                  onPress={() => console.log("Share clicked")}
-                >
-                  <Text style={styles.buttonText}>Share</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </Pressable>
-        ))}
-      </ScrollView>
     </View>
   );
 };
@@ -192,26 +160,11 @@ const styles = StyleSheet.create({
     flex: 1,
     // backgroundColor: "#d7d7d7",
   },
-  headerContainer: {
+  header: {
     flexDirection: "row",
     alignItems: "center",
     padding: 10,
     backgroundColor: "#007AFF",
-  },
-  filterButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#005BBB",
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 8,
-    marginRight: 10,
-  },
-  filterText: {
-    color: "#FFFFFF",
-    fontWeight: "600",
-    fontSize: 14,
-    marginLeft: 5,
   },
   searchBar: {
     flex: 1,
@@ -220,6 +173,83 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 15,
     color: "#333",
+  },
+  filterButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#005BBB",
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    marginLeft: 10,
+  },
+  filterButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "600",
+    fontSize: 14,
+    marginLeft: 5,
+  },
+  scrollView: {
+    width: "100%",
+  },
+  post: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 15,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    padding: 15,
+    marginVertical: 10,
+    marginHorizontal: 15,
+  },
+  image: {
+    width: "100%",
+    height: 300,
+    borderRadius: 10,
+    resizeMode: "cover",
+    marginBottom: 10,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 8,
+    color: "#333",
+  },
+  description: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#333",
+    marginBottom: 5,
+  },
+  location: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 8,
+  },
+  tags: {
+    fontSize: 14,
+    color: "#007AFF",
+    fontWeight: "400",
+    marginBottom: 10,
+  },
+  postFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#eee",
+  },
+  author: {
+    fontSize: 12,
+    color: "#666",
+  },
+  status: {
+    fontSize: 12,
+    color: "#666",
+    fontWeight: "bold",
   },
   modalOverlay: {
     flex: 1,
@@ -247,57 +277,6 @@ const styles = StyleSheet.create({
   dropdownText: {
     fontSize: 16,
     color: "#333",
-  },
-  scrollView: {
-    width: "100%",
-  },
-  post: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 15,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    padding: 15,
-    marginVertical: 10,
-    marginHorizontal: 15,
-  },
-  image: {
-    width: "100%",
-    height: 300,
-    borderRadius: 10,
-    resizeMode: "cover",
-    marginBottom: 10,
-  },
-  description: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#333",
-    marginBottom: 5,
-  },
-  hashtags: {
-    fontSize: 14,
-    color: "#007AFF",
-    fontWeight: "400",
-    marginBottom: 10,
-  },
-  buttons: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 10,
-  },
-  button: {
-    backgroundColor: "#007AFF",
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 8,
-  },
-  buttonText: {
-    color: "#FFF",
-    fontWeight: "600",
-    fontSize: 14,
-    textAlign: "center",
   },
   subcategoryItem: {
     paddingVertical: 8,

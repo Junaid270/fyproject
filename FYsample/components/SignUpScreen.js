@@ -9,14 +9,37 @@ import {
   StyleSheet,
   ScrollView,
 } from "react-native";
-
+import { useAuth } from "../context/AuthContext";
 
 const SignUpScreen = ({ navigation }) => {
+  const { register } = useAuth();
   const [username, setUsername] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [phoneNumber, setPhoneNumber] = React.useState("");
   const [aadharNumber, setAadharNumber] = React.useState("");
+
+  const handleSignUp = async () => {
+    if (!username || !email || !password || !phoneNumber || !aadharNumber) {
+      alert("Please fill in all fields");
+      return;
+    }
+
+    const result = await register({
+      username,
+      email,
+      password,
+      phoneNumber,
+      aadharNumber,
+      role: "user",
+    });
+
+    if (result.success) {
+      navigation.navigate("BottomTabs");
+    } else {
+      alert(result.message);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -27,7 +50,7 @@ const SignUpScreen = ({ navigation }) => {
         />
       </View>
       <Text style={styles.title}>Sign Up ✅</Text>
-      <Text style={styles.text}>Let’s create your account!</Text>
+      <Text style={styles.text}>Let's create your account!</Text>
 
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.formContainer}>
@@ -75,19 +98,26 @@ const SignUpScreen = ({ navigation }) => {
             value={password}
             onChangeText={setPassword}
           />
-        <View style={{ height: 2, width: '100%', position: 'absolute', backgroundColor: '#EEEEEE', top: 710 }}></View>
+          <View
+            style={{
+              height: 2,
+              width: "100%",
+              position: "absolute",
+              backgroundColor: "#EEEEEE",
+              top: 710,
+            }}
+          ></View>
           <View style={styles.noAccount}>
             <Text>Already have an account? </Text>
             <Pressable onPress={() => navigation.navigate("SignIn")}>
               <Text style={styles.regiText}>Sign In</Text>
             </Pressable>
           </View>
-          <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('BottomTabs')}>
+          <TouchableOpacity style={styles.button} onPress={handleSignUp}>
             <Text style={styles.buttonText}>Sign Up</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
-      
     </View>
   );
 };
