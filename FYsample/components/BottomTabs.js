@@ -4,6 +4,7 @@
     import CreatePostScreen from "./CreatePostScreen";
     import ProfileScreen from "./ProfileScreen";
     import { Ionicons } from 'react-native-vector-icons';
+    import { Text,View } from "react-native";
 
     const Tab = createBottomTabNavigator();
 
@@ -25,6 +26,30 @@
             tabBarIcon: ({ color }) => (
               <Ionicons name="home-outline" size={30} color={color} /> // Make the icon bigger
             ),
+            headerTitle: () => (
+              <View
+                style={{
+                  height: 60, // Adjust the header height as needed
+                  backgroundColor: "#fff", // Header background color
+                  justifyContent: "center",
+                  alignItems: "center",
+                  position: "relative", // Ensure proper positioning within the parent
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 24,
+                    fontWeight: "bold",
+                    color: "#326BDF",
+                    textAlign: "center",
+                    fontFamily: "Think", // Ensure this font is properly loaded
+                    paddingLeft: 114,
+                  }}
+                >
+                  Nagrik Seva
+                </Text>
+              </View>
+            ), // Custom header title with styling
           }}
         />
         <Tab.Screen
