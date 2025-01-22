@@ -24,7 +24,7 @@ export function AuthProvider({ children }) {
 
   const checkAuth = async () => {
     try {
-      const response = await fetch(`${config.API_URL}/auth/admin/check`, {
+      const response = await fetch(`${config.API_URL}/admin/check`, {
         credentials: "include",
       });
 
@@ -47,15 +47,15 @@ export function AuthProvider({ children }) {
 
   const login = async (userData) => {
     try {
-      const response = await fetch(`${config.API_URL}/auth/admin/login`, {
+      const response = await fetch(`${config.API_URL}/admin/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         credentials: 'include', // Important for session cookies
         body: JSON.stringify(userData)
-      });
-  
+      } );
+  console.log(response)
       if (!response.ok) {
         throw new Error('Login failed');
       }
@@ -84,7 +84,7 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     try {
-      await fetch(`${config.API_URL}/auth/admin/logout`, {
+      await fetch(`${config.API_URL}/admin/logout`, {
         method: "POST",
         credentials: "include",
       });

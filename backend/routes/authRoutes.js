@@ -22,28 +22,30 @@ router.post("/register", async (req, res) => {
     }
 
     // In your registration route, add this validation
-    const cleanAadhar = aadharNumber.toString().replace(/\s+/g, '').trim();
+    const cleanAadhar = aadharNumber.toString().replace(/\s+/g, "").trim();
     if (cleanAadhar !== aadharNumber) {
-      console.log(`Cleaned Aadhar number from "${aadharNumber}" to "${cleanAadhar}"`);
+      console.log(
+        `Cleaned Aadhar number from "${aadharNumber}" to "${cleanAadhar}"`
+      );
     }
 
     // Check for existing Aadhar with cleaned version
-    const existingAadhar = await User.findOne({ 
-      aadharNumber: cleanAadhar 
+    const existingAadhar = await User.findOne({
+      aadharNumber: cleanAadhar,
     });
 
     if (existingAadhar) {
       console.log("Found existing Aadhar:", {
         searched: cleanAadhar,
         found: existingAadhar.aadharNumber,
-        userId: existingAadhar._id
+        userId: existingAadhar._id,
       });
-      return res.status(400).json({ 
+      return res.status(400).json({
         message: "Aadhar number already registered",
         debug: {
           searched: cleanAadhar,
-          found: existingAadhar.aadharNumber
-        }
+          found: existingAadhar.aadharNumber,
+        },
       });
     }
 
@@ -143,32 +145,31 @@ router.get("/debug/check-aadhar/:aadharNumber", async (req, res) => {
 router.get("/debug/aadhar-check/:aadharNumber", async (req, res) => {
   try {
     const { aadharNumber } = req.params;
-    
+
     // Find all users with similar Aadhar numbers (including with spaces)
     const users = await User.find({
       $or: [
         { aadharNumber: aadharNumber },
-        { aadharNumber: new RegExp(aadharNumber.split('').join('\\s*')) }
-      ]
+        { aadharNumber: new RegExp(aadharNumber.split("").join("\\s*")) },
+      ],
     });
 
     console.log(`Debug: Checking Aadhar ${aadharNumber}`);
-    console.log('Found users:', users);
+    console.log("Found users:", users);
 
     // Return detailed information
     res.json({
       searchedAadhar: aadharNumber,
-      usersFound: users.map(u => ({
+      usersFound: users.map((u) => ({
         id: u._id,
         username: u.username,
         aadharNumber: u.aadharNumber,
         aadharLength: u.aadharNumber?.length,
         hasSpaces: /\s/.test(u.aadharNumber),
-      }))
+      })),
     });
-
   } catch (error) {
-    console.error('Debug Aadhar check error:', error);
+    console.error("Debug Aadhar check error:", error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -178,10 +179,10 @@ router.post("/debug/cleanup-aadhar", async (req, res) => {
   try {
     const users = await User.find({});
     let updates = 0;
-    
+
     for (const user of users) {
       if (user.aadharNumber) {
-        const cleaned = user.aadharNumber.replace(/\s+/g, '').trim();
+        const cleaned = user.aadharNumber.replace(/\s+/g, "").trim();
         if (cleaned !== user.aadharNumber) {
           user.aadharNumber = cleaned;
           await user.save();
@@ -189,10 +190,10 @@ router.post("/debug/cleanup-aadhar", async (req, res) => {
         }
       }
     }
-    
+
     res.json({ message: `Cleaned up ${updates} users` });
   } catch (error) {
-    console.error('Cleanup error:', error);
+    console.error("Cleanup error:", error);
     res.status(500).json({ error: error.message });
   }
 });

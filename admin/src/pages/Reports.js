@@ -33,10 +33,10 @@ function Reports() {
   const fetchData = async () => {
     try {
       const [statsResponse, postsResponse] = await Promise.all([
-        fetch(`${config.API_URL}/auth/admin/stats`, {
+        fetch(`${config.API_URL}/admin/stats`, {
           credentials: "include",
         }),
-        fetch(`${config.API_URL}/auth/admin/reported-posts`, {
+        fetch(`${config.API_URL}/admin/reported-posts`, {
           credentials: "include",
         }),
       ]);
@@ -59,7 +59,7 @@ function Reports() {
 
   const handleDelete = async (postId) => {
     try {
-      await fetch(`${config.API_URL}/auth/admin/posts/${postId}`, {
+      await fetch(`${config.API_URL}/admin/posts/${postId}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -72,7 +72,7 @@ function Reports() {
   const handleClearReports = async (postId) => {
     try {
       await fetch(
-        `${config.API_URL}/auth/admin/posts/${postId}/clear-reports`,
+        `${config.API_URL}/admin/posts/${postId}/clear-reports`,
         {
           method: "POST",
           credentials: "include",
@@ -86,7 +86,7 @@ function Reports() {
 
   const handleUpdateStatus = async (postId, newStatus) => {
     try {
-      await fetch(`${config.API_URL}/auth/admin/posts/${postId}/status`, {
+      await fetch(`${config.API_URL}/admin/posts/${postId}/status`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

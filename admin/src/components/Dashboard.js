@@ -43,8 +43,12 @@ const Dashboard = () => {
       setLoading(true);
       setError(null);
       
-      const response = await fetch("http://localhost:3000/auth/posts", {
+      const response = await fetch(`http://localhost:3000/auth/posts`, {
         credentials: "include",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
       });
 
       if (!response.ok) {

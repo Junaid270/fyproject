@@ -44,7 +44,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (credentials) => {
     try {
-      const response = await fetch(`${apiUrl}/auth/login`, {
+      const response = await fetch(`${apiUrl}/auth/users/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -68,7 +68,7 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (credentials) => {
     try {
-      const response = await fetchApi("/auth/register", {
+      const response = await fetchApi("/auth/users/register", {
         method: "POST",
         body: JSON.stringify(credentials),
       });
@@ -91,7 +91,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      const response = await fetchApi("/auth/logout", { method: "POST" });
+      const response = await fetchApi("/auth/users/logout", { method: "POST" });
       if (response.ok) {
         setUser(null);
         return true;
